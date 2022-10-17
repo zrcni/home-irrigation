@@ -1,7 +1,6 @@
-// power
-const int OUTPUT_PIN = 3;
-// sig
-const int ANALOG_PIN = 0;
+const int SENSOR_OUTPUT_PIN = 3;
+const int SENSOR_ANALOG_PIN = 0;
+const int RELAY_OUTPUT_PIN = 10;
 const int MOISTURE_LIMIT = 800;
 
 int value = 0;
@@ -10,32 +9,41 @@ void setup()
 {
   Serial.begin(9600);
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(OUTPUT_PIN, OUTPUT);
-  pinMode(ANALOG_PIN, INPUT);
+  pinMode(SENSOR_OUTPUT_PIN, OUTPUT);
+  pinMode(SENSOR_ANALOG_PIN, INPUT);
+
+  pinMode(RELAY_OUTPUT_PIN, OUTPUT);
 }
 
 void loop()
 {
-  analogWrite(OUTPUT_PIN, 255);
-  delay(200);
-
   digitalWrite(LED_BUILTIN, HIGH);
+  analogWrite(SENSOR_OUTPUT_PIN, 255);
 
-  value = analogRead(ANALOG_PIN);
+  // Wait a bit for the sensor to get
+  // set up after powering it up.
+  delay(100);
 
-  if (isWet(value)) {
-    Serial.println("wet :)");
-  } else {
+  value = analogRead(SENSOR_ANALOG_PIN);
+
+  analogWrite(SENSOR_OUTPUT_PIN, 0);
+ 
+  Serial.println(value);
+ 
+  if (isDry(value)) {
     Serial.println("dry :(");
+    analogWrite(RELAY_OUTPUT_PIN, 255);
+    delay(1000);
+    analogWrite(RELAY_OUTPUT_PIN, 0);
+  } else {
+    Serial.println("wet :)");
   }
 
   digitalWrite(LED_BUILTIN, LOW);
-
-  analogWrite(OUTPUT_PIN, 0);
-
-  delay(2000);
+  
+  delay(5000);
 }
 
-bool isWet(int value) {
-  return MOISTURE_LIMIT > value;
+bool isDry(int value) {
+  return value > MOISTURE_LIMIT;
 }
