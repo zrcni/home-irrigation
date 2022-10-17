@@ -2,6 +2,7 @@ const int SENSOR_OUTPUT_PIN = 3;
 const int SENSOR_ANALOG_PIN = 0;
 const int RELAY_OUTPUT_PIN = 10;
 const int MOISTURE_LIMIT = 800;
+const int PUMP_ON_DURATION = 2000;
 
 int value = 0;
 
@@ -33,7 +34,7 @@ void loop()
   if (isDry(value)) {
     Serial.println("dry :(");
     analogWrite(RELAY_OUTPUT_PIN, 255);
-    delay(1000);
+    delay(PUMP_ON_DURATION);
     analogWrite(RELAY_OUTPUT_PIN, 0);
   } else {
     Serial.println("wet :)");
