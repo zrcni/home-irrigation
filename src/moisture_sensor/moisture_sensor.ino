@@ -3,6 +3,9 @@ const int SENSOR_ANALOG_PIN = 0;
 const int RELAY_OUTPUT_PIN = 10;
 const int MOISTURE_LIMIT = 800;
 const int PUMP_ON_DURATION = 2000;
+// 30 minutes
+const int CHECK_INTERVAL = 1000 * 60 * 30;
+// const int CHECK_INTERVAL = 5000;
 
 int value = 0;
 
@@ -12,7 +15,6 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(SENSOR_OUTPUT_PIN, OUTPUT);
   pinMode(SENSOR_ANALOG_PIN, INPUT);
-
   pinMode(RELAY_OUTPUT_PIN, OUTPUT);
 }
 
@@ -42,7 +44,7 @@ void loop()
 
   digitalWrite(LED_BUILTIN, LOW);
   
-  delay(5000);
+  delay(CHECK_INTERVAL);
 }
 
 bool isDry(int value) {
