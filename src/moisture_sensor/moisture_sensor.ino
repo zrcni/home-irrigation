@@ -2,7 +2,7 @@ const int SENSOR_OUTPUT_PIN = 3;
 const int SENSOR_ANALOG_PIN = 0;
 const int RELAY_OUTPUT_PIN = 10;
 const int MOISTURE_LIMIT = 780;
-const int PUMP_ON_DURATION = 2000;
+const int PUMP_ON_DURATION = 2500;
 // 30 minutes
 const int CHECK_INTERVAL = 1000 * 60 * 30;
 // const int CHECK_INTERVAL = 5000;
