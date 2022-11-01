@@ -30,8 +30,16 @@ GND (black) -> GND
 
 # links
 
-https://github.com/jarzebski/Arduino-DS1307/blob/master/DS1307.cpp
+https://www.microbot.it/en/product/150/Real-Time-Clock-module-with-DS1307.html
+https://www.microbot.it/sketches/DS1307.zip
+https://www.microbot.it/documents/ds1307.pdf
 
 https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/readme.html
 
 https://wiki.dfrobot.com/FireBeetle_ESP8266_IOT_Microcontroller_SKU__DFR0489
+
+# issues
+
+including Wire.h in a sketch causes ESP8266 to crash?
+
+This was a part of the error: `ETS JAN 8 2013,RST CAUSE:2, BOOT MODE:(3,6)`

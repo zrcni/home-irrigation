@@ -1,49 +1,44 @@
+#include <ds1307.h>
 #include <Wire.h>
-#include <DS1307.h>
 
-DS1307 clock;
-RTCDateTime dt;
+ds1307 DS1307;
+
+uint8_t buffer[7]; // receiving buffer
 
 void setup()
 {
-  Serial.begin(9600);
+    Serial.begin(9600);
+    Wire.begin();
+    Serial.println("Real Time Clock module with DS1307 test sketch");
 
-  // Initialize DS1307
-  Serial.println("Initialize DS1307");
+    DS1307.resume();   // turn on the internal clock
 
-  clock.begin();
-
-  // If date not set
-  if (!clock.isReady())
-  {
-    // Set sketch compiling time
-    clock.setDateTime(__DATE__, __TIME__);
-  }
-
-
-  // set custom date
-  // clock.setDateTime(22, 10, 27, 20, 55, 30);
+    DS1307.setYear(22);
+    DS1307.setMonth(10);
+    DS1307.setDate(29);
+    DS1307.setDow(6);
+    DS1307.setHours(14);
+    DS1307.setMinutes(48);
+    DS1307.setSeconds(20);
 }
 
 void loop()
 {
-  dt = clock.getDateTime();
+    DS1307.getDate(buffer);
 
-  // For leading zero look to DS1307_dateformat example
+    Serial.print("Date(dd:mm:yy) ");
+    Serial.print(buffer[4], DEC);    // day
+    Serial.print(':');
+    Serial.print(buffer[5], DEC);    // month
+    Serial.print(':');
+    Serial.print(buffer[6], DEC);    // year
+    Serial.print(':');
+    Serial.print(" Time(hh:mm:ss) ");
+    Serial.print(buffer[2], DEC);    // hours
+    Serial.print(':');
+    Serial.print(buffer[1], DEC);    // minutes
+    Serial.print(':');
+    Serial.println(buffer[0], DEC);  // seconds
 
-  Serial.print("Raw data: ");
-  Serial.print(dt.year);
-  Serial.print("-");
-  Serial.print(dt.month);
-  Serial.print("-");
-  Serial.print(dt.day);
-  Serial.print(" ");
-  Serial.print(dt.hour);
-  Serial.print(":");
-  Serial.print(dt.minute);
-  Serial.print(":");
-  Serial.print(dt.second);
-  Serial.println("");
-
-  delay(1000);
+    delay(1000);
 }
