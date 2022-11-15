@@ -4,8 +4,8 @@ const int RELAY_OUTPUT_PIN = 10;
 const int MOISTURE_LIMIT = 780;
 const int PUMP_ON_DURATION = 2500;
 // 30 minutes
-const int CHECK_INTERVAL = 1000 * 60 * 30;
-// const int CHECK_INTERVAL = 5000;
+const uint32_t CHECK_INTERVAL = 1800000UL;
+// const uint32_t CHECK_INTERVAL = 5000L;
 
 int value = 0;
 
@@ -43,7 +43,7 @@ void loop()
   }
 
   digitalWrite(LED_BUILTIN, LOW);
-  
+  Serial.println(CHECK_INTERVAL, DEC);
   delay(CHECK_INTERVAL);
 }
 
