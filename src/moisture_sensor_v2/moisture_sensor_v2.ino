@@ -11,8 +11,8 @@ const uint8_t relay_output_pin = 10;
 const uint16_t moisture_limit = 780;
 const uint16_t water_release_duration = 2500;
 // 30 minutes
-const uint32_t check_interval = 1000 * 60 * 30;
-// const uint32_t check_interval = 5000;
+const uint32_t check_interval = 1800000UL;
+// const uint32_t check_interval = 5000L;
 uint16_t moisture_value = 0;
 
 
