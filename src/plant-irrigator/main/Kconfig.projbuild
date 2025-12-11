@@ -1,0 +1,30 @@
+# put here your custom config value
+menu "Configuration"
+config WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+
+config WIFI_PASSWORD
+    string "WiFi Password"
+    default "mypassword"
+
+config MQTT_BROKER_IP
+    string "MQTT Broker IP Address"
+    default ""
+
+config MQTT_BROKER_PORT
+    int "MQTT Broker Port"
+    default 1883
+
+config MQTT_PUBLISH_TOPIC
+    string "MQTT Publish Topic"
+    default "sensors/plant_irrigator"
+
+config MQTT_CLIENT_ID
+    string "MQTT Client ID"
+    default "esp32_client"
+
+config MQTT_DEVICE_ID
+    string "MQTT Device ID"
+    default "plant_irrigator_01"
+endmenu
