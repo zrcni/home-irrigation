@@ -9,6 +9,10 @@
 
 static const char *TAG = "plant";
 
+// Relay is Active Low
+#define VALVE_OPEN_LEVEL 0
+#define VALVE_CLOSED_LEVEL 1
+
 void plant_system_init(adc_oneshot_unit_handle_t *adc_handle)
 {
     adc_oneshot_unit_init_cfg_t init_config1 = {
@@ -28,8 +32,8 @@ void plant_gpio_init(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_
     // Init Valve GPIO Pin
     gpio_reset_pin(plant->valve_gpio_pin);
     gpio_set_direction(plant->valve_gpio_pin, GPIO_MODE_OUTPUT);
-    gpio_set_level(plant->valve_gpio_pin, 0); // Assume 0 is Closed (Normally Closed)
-    ESP_LOGI(TAG, "Init: Set valve pin %d to 0", plant->valve_gpio_pin);
+    gpio_set_level(plant->valve_gpio_pin, VALVE_CLOSED_LEVEL);
+    ESP_LOGI(TAG, "Init: Set valve pin %d to %d (OFF)", plant->valve_gpio_pin, VALVE_CLOSED_LEVEL);
 
     // Init ADC Channel
     adc_oneshot_chan_cfg_t config = {
@@ -71,11 +75,11 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
         ESP_LOGI(TAG, "Plant %s is DRY. Watering...", plant->plant_id);
         
         // Open Valve
-        gpio_set_level(plant->valve_gpio_pin, 1);
-        ESP_LOGI(TAG, "Plant %s: Set valve pin %d to 1 (OPEN)", plant->plant_id, plant->valve_gpio_pin);
+        gpio_set_level(plant->valve_gpio_pin, VALVE_OPEN_LEVEL);
+        ESP_LOGI(TAG, "Plant %s: Set valve pin %d to %d (OPEN)", plant->plant_id, plant->valve_gpio_pin, VALVE_OPEN_LEVEL);
         vTaskDelay(pdMS_TO_TICKS(plant->release_duration_ms));
-        gpio_set_level(plant->valve_gpio_pin, 0);
-        ESP_LOGI(TAG, "Plant %s: Set valve pin %d to 0 (CLOSE)", plant->plant_id, plant->valve_gpio_pin);
+        gpio_set_level(plant->valve_gpio_pin, VALVE_CLOSED_LEVEL);
+        ESP_LOGI(TAG, "Plant %s: Set valve pin %d to %d (CLOSE)", plant->plant_id, plant->valve_gpio_pin, VALVE_CLOSED_LEVEL);
 
         // Publish Irrigation Event
         snprintf(payload, sizeof(payload), 
