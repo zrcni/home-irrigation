@@ -18,27 +18,26 @@ static const plant_config_t plants[] = {
         .plant_id = "plant_1",
         .sensor_power_pin = GPIO_NUM_25,
         .sensor_adc_channel = ADC_CHANNEL_6, // GPIO 34
-        .valve_gpio_pin = GPIO_NUM_26,
+        .pump_relay_pin = GPIO_NUM_26,
         .moisture_dry_threshold = 780,
-        .release_duration_ms = 2500
+        .pump_duration_ms = 2500
     },
     {
         .plant_id = "plant_2",
         .sensor_power_pin = GPIO_NUM_27,
         .sensor_adc_channel = ADC_CHANNEL_7, // GPIO 35
-        .valve_gpio_pin = GPIO_NUM_14,
+        .pump_relay_pin = GPIO_NUM_14,
         .moisture_dry_threshold = 780,
-        .release_duration_ms = 2500
+        .pump_duration_ms = 2500
+    },
+    {
+        .plant_id = "plant_3",
+        .sensor_power_pin = GPIO_NUM_12,
+        .sensor_adc_channel = ADC_CHANNEL_4, // GPIO 32
+        .pump_relay_pin = GPIO_NUM_13,
+        .moisture_dry_threshold = 780,
+        .pump_duration_ms = 2500
     }
-        // },
-    // {
-    //     .plant_id = "plant_3",
-    //     .sensor_power_pin = GPIO_NUM_12,
-    //     .sensor_adc_channel = ADC_CHANNEL_4, // GPIO 32
-    //     .valve_gpio_pin = GPIO_NUM_13,
-    //     .moisture_dry_threshold = 780,
-    //     .release_duration_ms = 2500
-    // }
 };
 
 void app_main(void)

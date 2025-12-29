@@ -24,10 +24,10 @@ void plant_gpio_init(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_
     gpio_set_direction(plant->sensor_power_pin, GPIO_MODE_OUTPUT);
     gpio_set_level(plant->sensor_power_pin, 0);
 
-    // Init Valve GPIO Pin
-    gpio_reset_pin(plant->valve_gpio_pin);
-    gpio_set_direction(plant->valve_gpio_pin, GPIO_MODE_OUTPUT);
-    gpio_set_level(plant->valve_gpio_pin, 0); // Assume 0 is Closed (Normally Closed)
+    // Init Pump Relay Pin
+    gpio_reset_pin(plant->pump_relay_pin);
+    gpio_set_direction(plant->pump_relay_pin, GPIO_MODE_OUTPUT);
+    gpio_set_level(plant->pump_relay_pin, 0); // Assume 0 is OFF (Open)
 
     // Init ADC Channel
     adc_oneshot_chan_cfg_t config = {
@@ -66,15 +66,15 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
     if (adc_raw > plant->moisture_dry_threshold) {
         ESP_LOGI(TAG, "Plant %s is DRY. Watering...", plant->plant_id);
         
-        // Open Valve
-        gpio_set_level(plant->valve_gpio_pin, 1);
-        vTaskDelay(pdMS_TO_TICKS(plant->release_duration_ms));
-        gpio_set_level(plant->valve_gpio_pin, 0);
+        // Turn on Pump
+        gpio_set_level(plant->pump_relay_pin, 1);
+        vTaskDelay(pdMS_TO_TICKS(plant->pump_duration_ms));
+        gpio_set_level(plant->pump_relay_pin, 0);
 
         // Publish Irrigation Event
         snprintf(payload, sizeof(payload), 
             "{\"timestamp\":%d,\"moisture\":%d,\"water_duration\":%d,\"device_id\":\"%s\",\"client_id\":\"%s\",\"plant_id\":\"%s\"}",
-            (int)now, adc_raw, plant->release_duration_ms, CONFIG_MQTT_DEVICE_ID, CONFIG_MQTT_CLIENT_ID, plant->plant_id);
+            (int)now, adc_raw, plant->pump_duration_ms, CONFIG_MQTT_DEVICE_ID, CONFIG_MQTT_CLIENT_ID, plant->plant_id);
         
         mqtt_app_publish(CONFIG_MQTT_PUBLISH_TOPIC, payload);
     } else {

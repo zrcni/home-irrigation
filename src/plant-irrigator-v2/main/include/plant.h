@@ -8,9 +8,9 @@ typedef struct {
     const char* plant_id;
     gpio_num_t sensor_power_pin;
     adc_channel_t sensor_adc_channel;
-    gpio_num_t valve_gpio_pin;
+    gpio_num_t pump_relay_pin;
     int moisture_dry_threshold;
-    int release_duration_ms;
+    int pump_duration_ms;
 } plant_config_t;
 
 // Initialize the plant system (ADC, etc)
