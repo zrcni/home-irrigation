@@ -31,6 +31,19 @@ The ESP32-C3 Super Mini has a limited number of exposed pins. The following pins
 *   The ESP32-C3 uses `ADC_UNIT_1` for these channels.
 *   Ensure the ADC attenuation settings in code match the voltage range of your sensors (usually 0-3.3V).
 
+## Optional Components
+
+### OLED Display (SSD1306/SH1106)
+You can add a 0.96" or 1.3" I2C OLED display to view status information.
+
+| OLED Pin | ESP32-C3 Pin | Notes |
+| :--- | :--- | :--- |
+| **GND** | GND | |
+| **VCC** | 3.3V | 3.3V is recommended. |
+| **SCL** | **GPIO 8** | Recommended (Check for conflicts with LED/Strapping) |
+| **SDA** | **GPIO 9** | Recommended (Check for conflicts with Boot Button) |
+*   *Note*: On the C3 Super Mini, GPIO 8 and 9 are often used for internal functions. If you encounter issues, you can reassign I2C to any other free pins (e.g., GPIO 2, 3) in the software.
+
 ## Relay Module & Valve Wiring
 The system uses a 4-Channel Relay Module to control the water valves.
 
@@ -45,6 +58,41 @@ For each plant's valve, wire the relay channel as follows:
 1.  **COM (Common) Port**: Connect to the **+5V Power Source**.
 2.  **NO (Normally Open) Port**: Connect to the **Valve's Positive (+) Wire**.
 3.  **Valve's Negative (-) Wire**: Connect to **Ground (GND)**.
+
+### Flyback Diode Wiring (Crucial)
+Connect a diode across the terminals of **each** valve to protect the system.
+
+*   **Stripe (Cathode)**: Connect to the **Positive (+)** valve terminal (connected to Relay NO).
+*   **No Stripe (Anode)**: Connect to the **Negative (-)** valve terminal (connected to GND).
+
+```text
+       +5V Power
+           |
+      [Relay NO Port]
+           |
+           |  <-- Wire to Valve Positive
+           |
+      +----o----+  <-- Connection Point A (Valve Positive)
+      |         |
+      |         |
+    [VALVE]  [DIODE]  (Stripe/Cathode pointing UP towards Positive)
+      |         |
+      |         |
+      +----o----+  <-- Connection Point B (Valve Negative)
+           |
+           |  <-- Wire to Valve Negative
+           |
+      Ground (GND)
+```
+
+### What happens?
+1.  **Watering (Relay ON)**: +5V comes down. It sees the Valve and the Diode.
+    *   It flows through the **Valve** (making it open).
+    *   It is **blocked** by the Diode (because the stripe is facing the pressure), so no current flows through the diode.
+2.  **Stop Watering (Relay OFF)**: The relay cuts the power.
+    *   The magnetic coil inside the valve is "charged" and doesn't want to stop. It tries to force electricity to keep moving, creating a massive reverse voltage spike (like a kickback).
+    *   Instead of shooting back up the wire to your ESP32, this "kickback" electricity takes the easy path: it loops through the **Diode** and back into the valve coil.
+    *   The energy spins around in this little "Valve-Diode loop" for a split second until it dies out, protecting everything else.
 
 ### Operation Logic
 *   **Idle State**: The relay is open (NC connected to COM, NO disconnected). The valve is unpowered and closed.
