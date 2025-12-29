@@ -23,11 +23,13 @@ void plant_gpio_init(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_
     gpio_reset_pin(plant->sensor_power_pin);
     gpio_set_direction(plant->sensor_power_pin, GPIO_MODE_OUTPUT);
     gpio_set_level(plant->sensor_power_pin, 0);
+    ESP_LOGI(TAG, "Init: Set sensor power pin %d to 0", plant->sensor_power_pin);
 
     // Init Valve GPIO Pin
     gpio_reset_pin(plant->valve_gpio_pin);
     gpio_set_direction(plant->valve_gpio_pin, GPIO_MODE_OUTPUT);
     gpio_set_level(plant->valve_gpio_pin, 0); // Assume 0 is Closed (Normally Closed)
+    ESP_LOGI(TAG, "Init: Set valve pin %d to 0", plant->valve_gpio_pin);
 
     // Init ADC Channel
     adc_oneshot_chan_cfg_t config = {
@@ -41,6 +43,7 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
 {
     // 1. Turn on Sensor
     gpio_set_level(plant->sensor_power_pin, 1);
+    ESP_LOGI(TAG, "Plant %s: Set sensor power pin %d to 1", plant->plant_id, plant->sensor_power_pin);
     vTaskDelay(pdMS_TO_TICKS(100));
 
     // 2. Read Sensor
@@ -50,6 +53,7 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
 
     // 3. Turn off Sensor
     gpio_set_level(plant->sensor_power_pin, 0);
+    ESP_LOGI(TAG, "Plant %s: Set sensor power pin %d to 0", plant->plant_id, plant->sensor_power_pin);
 
     // 4. Publish Sensor Data
     char payload[256];
@@ -68,8 +72,10 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
         
         // Open Valve
         gpio_set_level(plant->valve_gpio_pin, 1);
+        ESP_LOGI(TAG, "Plant %s: Set valve pin %d to 1 (OPEN)", plant->plant_id, plant->valve_gpio_pin);
         vTaskDelay(pdMS_TO_TICKS(plant->release_duration_ms));
         gpio_set_level(plant->valve_gpio_pin, 0);
+        ESP_LOGI(TAG, "Plant %s: Set valve pin %d to 0 (CLOSE)", plant->plant_id, plant->valve_gpio_pin);
 
         // Publish Irrigation Event
         snprintf(payload, sizeof(payload), 
