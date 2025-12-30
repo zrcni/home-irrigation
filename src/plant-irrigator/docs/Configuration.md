@@ -39,6 +39,7 @@ The `config.json` file has three main sections: `wifi`, `mqtt`, and `plants`.
     "plants": [
         {
             "id": "plant_1",
+            "name": "Basil",
             "sensor_power_pin": 25,
             "sensor_adc_channel": 6,
             "valve_pin": 26,
@@ -65,6 +66,7 @@ The `config.json` file has three main sections: `wifi`, `mqtt`, and `plants`.
 ### Plant Settings
 You can define multiple plants in the `plants` array. Each plant object requires:
 *   **id**: A unique string identifier for the plant (e.g., "basil", "fern").
+*   **name**: A human-readable name for the plant (e.g., "Kitchen Basil").
 *   **sensor_power_pin**: The GPIO pin connected to the soil moisture sensor's VCC (for powering it only during reading).
 *   **sensor_adc_channel**: The ADC channel corresponding to the sensor's analog output pin.
     *   *Note: Check ESP32 documentation to map GPIO pins to ADC channels (e.g., GPIO 34 is ADC1_CH6).*

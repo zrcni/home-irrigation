@@ -6,6 +6,7 @@
 
 typedef struct {
     const char* plant_id;
+    const char* plant_name;
     gpio_num_t sensor_power_pin;
     adc_channel_t sensor_adc_channel;
     gpio_num_t valve_gpio_pin;

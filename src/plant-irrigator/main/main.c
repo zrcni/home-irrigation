@@ -116,7 +116,11 @@ static void load_config(void)
         int i = 0;
         cJSON *plant_item = NULL;
         cJSON_ArrayForEach(plant_item, plants_json) {
+            memset(&plants[i], 0, sizeof(plant_config_t));
+
             cJSON *id = cJSON_GetObjectItemCaseSensitive(plant_item, "id");
+
+            cJSON *name = cJSON_GetObjectItemCaseSensitive(plant_item, "name");
             cJSON *sensor_power_pin = cJSON_GetObjectItemCaseSensitive(plant_item, "sensor_power_pin");
             cJSON *sensor_adc_channel = cJSON_GetObjectItemCaseSensitive(plant_item, "sensor_adc_channel");
             cJSON *valve_pin = cJSON_GetObjectItemCaseSensitive(plant_item, "valve_pin");
@@ -124,7 +128,9 @@ static void load_config(void)
             cJSON *release_duration_ms = cJSON_GetObjectItemCaseSensitive(plant_item, "release_duration_ms");
 
             if (cJSON_IsString(id)) plants[i].plant_id = strdup(id->valuestring);
+            if (cJSON_IsString(name)) plants[i].plant_name = strdup(name->valuestring);
             if (cJSON_IsNumber(sensor_power_pin)) plants[i].sensor_power_pin = (gpio_num_t)sensor_power_pin->valueint;
+
             if (cJSON_IsNumber(sensor_adc_channel)) plants[i].sensor_adc_channel = (adc_channel_t)sensor_adc_channel->valueint;
             if (cJSON_IsNumber(valve_pin)) plants[i].valve_gpio_pin = (gpio_num_t)valve_pin->valueint;
             if (cJSON_IsNumber(dry_threshold)) plants[i].moisture_dry_threshold = dry_threshold->valueint;
