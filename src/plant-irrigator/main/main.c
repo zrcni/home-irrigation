@@ -53,13 +53,13 @@ static esp_err_t init_spiffs(void)
     return ESP_OK;
 }
 
-static void load_config(void)
+static bool load_config(void)
 {
     ESP_LOGI(TAG, "Reading config file");
     FILE* f = fopen("/spiffs/config.json", "r");
     if (f == NULL) {
         ESP_LOGE(TAG, "Failed to open config file");
-        return;
+        return false;
     }
 
     fseek(f, 0, SEEK_END);
@@ -79,7 +79,7 @@ static void load_config(void)
         if (error_ptr != NULL) {
             ESP_LOGE(TAG, "Error before: %s", error_ptr);
         }
-        return;
+        return false;
     }
 
     // WiFi
@@ -87,10 +87,14 @@ static void load_config(void)
     cJSON *ssid = cJSON_GetObjectItemCaseSensitive(wifi, "ssid");
     cJSON *password = cJSON_GetObjectItemCaseSensitive(wifi, "password");
 
-    if (cJSON_IsString(ssid) && (ssid->valuestring != NULL) &&
-        cJSON_IsString(password) && (password->valuestring != NULL)) {
-        wifi_app_start(ssid->valuestring, password->valuestring);
+    if (!cJSON_IsString(ssid) || (ssid->valuestring == NULL) ||
+        !cJSON_IsString(password) || (password->valuestring == NULL)) {
+        ESP_LOGE(TAG, "Invalid WiFi config");
+        cJSON_Delete(json);
+        return false;
     }
+    
+    wifi_app_start(ssid->valuestring, password->valuestring);
 
     // MQTT
     cJSON *mqtt = cJSON_GetObjectItemCaseSensitive(json, "mqtt");
@@ -100,9 +104,16 @@ static void load_config(void)
     cJSON *client_id = cJSON_GetObjectItemCaseSensitive(mqtt, "client_id");
     cJSON *device_id = cJSON_GetObjectItemCaseSensitive(mqtt, "device_id");
 
-    if (cJSON_IsString(broker_ip)) strlcpy(mqtt_cfg.broker_ip, broker_ip->valuestring, sizeof(mqtt_cfg.broker_ip));
-    if (cJSON_IsNumber(port)) mqtt_cfg.port = port->valueint;
-    if (cJSON_IsString(topic)) strlcpy(mqtt_cfg.topic, topic->valuestring, sizeof(mqtt_cfg.topic));
+    if (!cJSON_IsString(broker_ip) || !cJSON_IsNumber(port) || !cJSON_IsString(topic)) {
+        ESP_LOGE(TAG, "Invalid MQTT config");
+        cJSON_Delete(json);
+        return false;
+    }
+
+    strlcpy(mqtt_cfg.broker_ip, broker_ip->valuestring, sizeof(mqtt_cfg.broker_ip));
+    mqtt_cfg.port = port->valueint;
+    strlcpy(mqtt_cfg.topic, topic->valuestring, sizeof(mqtt_cfg.topic));
+    
     if (cJSON_IsString(client_id)) strlcpy(mqtt_cfg.client_id, client_id->valuestring, sizeof(mqtt_cfg.client_id));
     if (cJSON_IsString(device_id)) strlcpy(mqtt_cfg.device_id, device_id->valuestring, sizeof(mqtt_cfg.device_id));
 
@@ -141,6 +152,7 @@ static void load_config(void)
     }
 
     cJSON_Delete(json);
+    return true;
 }
 
 void app_main(void)
@@ -157,7 +169,10 @@ void app_main(void)
     ESP_ERROR_CHECK(init_spiffs());
 
     // Load Config and Start Services
-    load_config();
+    if (!load_config()) {
+        ESP_LOGE(TAG, "Failed to load configuration. Halting.");
+        while(1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
+    }
 
     // Initialize Plant System
     adc_oneshot_unit_handle_t adc_handle;
