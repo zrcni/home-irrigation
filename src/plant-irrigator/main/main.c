@@ -10,14 +10,13 @@
 #include "wifi_app.h"
 #include "mqtt_app.h"
 #include "plant.h"
+#include "config_loader.h"
 
 static const char *TAG = "main";
 
 #define CHECK_INTERVAL_MS 1800000 // 30 minutes
 
-static plant_config_t *plants = NULL;
-static int num_plants = 0;
-static mqtt_config_t mqtt_cfg = {0};
+static app_config_t app_config;
 
 static esp_err_t init_spiffs(void)
 {
@@ -53,108 +52,6 @@ static esp_err_t init_spiffs(void)
     return ESP_OK;
 }
 
-static bool load_config(void)
-{
-    ESP_LOGI(TAG, "Reading config file");
-    FILE* f = fopen("/spiffs/config.json", "r");
-    if (f == NULL) {
-        ESP_LOGE(TAG, "Failed to open config file");
-        return false;
-    }
-
-    fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    char *string = malloc(fsize + 1);
-    fread(string, 1, fsize, f);
-    fclose(f);
-    string[fsize] = 0;
-
-    cJSON *json = cJSON_Parse(string);
-    free(string);
-
-    if (json == NULL) {
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            ESP_LOGE(TAG, "Error before: %s", error_ptr);
-        }
-        return false;
-    }
-
-    // WiFi
-    cJSON *wifi = cJSON_GetObjectItemCaseSensitive(json, "wifi");
-    cJSON *ssid = cJSON_GetObjectItemCaseSensitive(wifi, "ssid");
-    cJSON *password = cJSON_GetObjectItemCaseSensitive(wifi, "password");
-
-    if (!cJSON_IsString(ssid) || (ssid->valuestring == NULL) ||
-        !cJSON_IsString(password) || (password->valuestring == NULL)) {
-        ESP_LOGE(TAG, "Invalid WiFi config");
-        cJSON_Delete(json);
-        return false;
-    }
-    
-    wifi_app_start(ssid->valuestring, password->valuestring);
-
-    // MQTT
-    cJSON *mqtt = cJSON_GetObjectItemCaseSensitive(json, "mqtt");
-    cJSON *broker_ip = cJSON_GetObjectItemCaseSensitive(mqtt, "broker_ip");
-    cJSON *port = cJSON_GetObjectItemCaseSensitive(mqtt, "port");
-    cJSON *topic = cJSON_GetObjectItemCaseSensitive(mqtt, "topic");
-    cJSON *client_id = cJSON_GetObjectItemCaseSensitive(mqtt, "client_id");
-    cJSON *device_id = cJSON_GetObjectItemCaseSensitive(mqtt, "device_id");
-
-    if (!cJSON_IsString(broker_ip) || !cJSON_IsNumber(port) || !cJSON_IsString(topic)) {
-        ESP_LOGE(TAG, "Invalid MQTT config");
-        cJSON_Delete(json);
-        return false;
-    }
-
-    strlcpy(mqtt_cfg.broker_ip, broker_ip->valuestring, sizeof(mqtt_cfg.broker_ip));
-    mqtt_cfg.port = port->valueint;
-    strlcpy(mqtt_cfg.topic, topic->valuestring, sizeof(mqtt_cfg.topic));
-    
-    if (cJSON_IsString(client_id)) strlcpy(mqtt_cfg.client_id, client_id->valuestring, sizeof(mqtt_cfg.client_id));
-    if (cJSON_IsString(device_id)) strlcpy(mqtt_cfg.device_id, device_id->valuestring, sizeof(mqtt_cfg.device_id));
-
-    mqtt_app_start(&mqtt_cfg);
-
-    // Plants
-    cJSON *plants_json = cJSON_GetObjectItemCaseSensitive(json, "plants");
-    num_plants = cJSON_GetArraySize(plants_json);
-    if (num_plants > 0) {
-        plants = malloc(num_plants * sizeof(plant_config_t));
-        int i = 0;
-        cJSON *plant_item = NULL;
-        cJSON_ArrayForEach(plant_item, plants_json) {
-            memset(&plants[i], 0, sizeof(plant_config_t));
-
-            cJSON *id = cJSON_GetObjectItemCaseSensitive(plant_item, "id");
-
-            cJSON *name = cJSON_GetObjectItemCaseSensitive(plant_item, "name");
-            cJSON *sensor_power_pin = cJSON_GetObjectItemCaseSensitive(plant_item, "sensor_power_pin");
-            cJSON *sensor_adc_channel = cJSON_GetObjectItemCaseSensitive(plant_item, "sensor_adc_channel");
-            cJSON *valve_pin = cJSON_GetObjectItemCaseSensitive(plant_item, "valve_pin");
-            cJSON *dry_threshold = cJSON_GetObjectItemCaseSensitive(plant_item, "dry_threshold");
-            cJSON *release_duration_ms = cJSON_GetObjectItemCaseSensitive(plant_item, "release_duration_ms");
-
-            if (cJSON_IsString(id)) plants[i].plant_id = strdup(id->valuestring);
-            if (cJSON_IsString(name)) plants[i].plant_name = strdup(name->valuestring);
-            if (cJSON_IsNumber(sensor_power_pin)) plants[i].sensor_power_pin = (gpio_num_t)sensor_power_pin->valueint;
-
-            if (cJSON_IsNumber(sensor_adc_channel)) plants[i].sensor_adc_channel = (adc_channel_t)sensor_adc_channel->valueint;
-            if (cJSON_IsNumber(valve_pin)) plants[i].valve_gpio_pin = (gpio_num_t)valve_pin->valueint;
-            if (cJSON_IsNumber(dry_threshold)) plants[i].moisture_dry_threshold = dry_threshold->valueint;
-            if (cJSON_IsNumber(release_duration_ms)) plants[i].release_duration_ms = release_duration_ms->valueint;
-            
-            i++;
-        }
-    }
-
-    cJSON_Delete(json);
-    return true;
-}
-
 void app_main(void)
 {
     // Initialize NVS
@@ -168,26 +65,30 @@ void app_main(void)
     // Initialize SPIFFS
     ESP_ERROR_CHECK(init_spiffs());
 
-    // Load Config and Start Services
-    if (!load_config()) {
+    // Load Config
+    if (!config_load(&app_config)) {
         ESP_LOGE(TAG, "Failed to load configuration. Halting.");
         while(1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
     }
+
+    // Start Services
+    wifi_app_start(app_config.wifi.ssid, app_config.wifi.password);
+    mqtt_app_start(&app_config.mqtt);
 
     // Initialize Plant System
     adc_oneshot_unit_handle_t adc_handle;
     plant_system_init(&adc_handle);
 
     // Initialize Plants
-    for (int i = 0; i < num_plants; i++) {
-        plant_gpio_init(&plants[i], adc_handle);
+    for (int i = 0; i < app_config.num_plants; i++) {
+        plant_gpio_init(&app_config.plants[i], adc_handle);
     }
 
     ESP_LOGI(TAG, "System initialized. Starting loop...");
 
     while (1) {
-        for (int i = 0; i < num_plants; i++) {
-            plant_process(&plants[i], adc_handle, mqtt_cfg.topic, mqtt_cfg.device_id, mqtt_cfg.client_id);
+        for (int i = 0; i < app_config.num_plants; i++) {
+            plant_process(&app_config.plants[i], adc_handle, app_config.mqtt.topic, app_config.mqtt.device_id, app_config.mqtt.client_id);
             vTaskDelay(pdMS_TO_TICKS(1000)); // Small delay between plants
         }
         
@@ -195,3 +96,4 @@ void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(CHECK_INTERVAL_MS));
     }
 }
+
