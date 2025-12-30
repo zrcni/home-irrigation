@@ -49,14 +49,14 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-void mqtt_app_start(void)
+void mqtt_app_start(const mqtt_config_t *config)
 {
-    char uri[64];
-    snprintf(uri, sizeof(uri), "mqtt://%s:%d", CONFIG_MQTT_BROKER_IP, CONFIG_MQTT_BROKER_PORT);
+    char uri[128];
+    snprintf(uri, sizeof(uri), "mqtt://%s:%d", config->broker_ip, config->port);
 
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri,
-        .credentials.client_id = CONFIG_MQTT_CLIENT_ID,
+        .credentials.client_id = config->client_id,
     };
 
     client = esp_mqtt_client_init(&mqtt_cfg);

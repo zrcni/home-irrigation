@@ -42,7 +42,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-void wifi_app_start(void)
+void wifi_app_start(const char *ssid, const char *password)
 {
     s_wifi_event_group = xEventGroupCreate();
 
@@ -68,11 +68,13 @@ void wifi_app_start(void)
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = CONFIG_WIFI_SSID,
-            .password = CONFIG_WIFI_PASSWORD,
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
         },
     };
+    
+    strlcpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    strlcpy((char *)wifi_config.sta.password, password, sizeof(wifi_config.sta.password));
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
@@ -88,9 +90,9 @@ void wifi_app_start(void)
             portMAX_DELAY);
 
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "connected to ap SSID:%s", CONFIG_WIFI_SSID);
+        ESP_LOGI(TAG, "connected to ap SSID:%s", ssid);
     } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s", CONFIG_WIFI_SSID);
+        ESP_LOGI(TAG, "Failed to connect to SSID:%s", ssid);
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }

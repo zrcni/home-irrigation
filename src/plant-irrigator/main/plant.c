@@ -38,12 +38,12 @@ void plant_gpio_init(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_
     // Init ADC Channel
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, plant->sensor_adc_channel, &config));
 }
 
-void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_handle)
+void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_handle, const char* mqtt_topic, const char* device_id, const char* client_id)
 {
     // 1. Turn on Sensor
     gpio_set_level(plant->sensor_power_pin, 1);
@@ -66,9 +66,9 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
     
     snprintf(payload, sizeof(payload), 
         "{\"timestamp\":%d,\"moisture\":%d,\"water_duration\":%d,\"device_id\":\"%s\",\"client_id\":\"%s\",\"plant_id\":\"%s\"}",
-        (int)now, adc_raw, 0, CONFIG_MQTT_DEVICE_ID, CONFIG_MQTT_CLIENT_ID, plant->plant_id);
+        (int)now, adc_raw, 0, device_id, client_id, plant->plant_id);
     
-    mqtt_app_publish(CONFIG_MQTT_PUBLISH_TOPIC, payload);
+    mqtt_app_publish(mqtt_topic, payload);
 
     // 5. Check Threshold
     if (adc_raw > plant->moisture_dry_threshold) {
@@ -84,9 +84,9 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
         // Publish Irrigation Event
         snprintf(payload, sizeof(payload), 
             "{\"timestamp\":%d,\"moisture\":%d,\"water_duration\":%d,\"device_id\":\"%s\",\"client_id\":\"%s\",\"plant_id\":\"%s\"}",
-            (int)now, adc_raw, plant->release_duration_ms, CONFIG_MQTT_DEVICE_ID, CONFIG_MQTT_CLIENT_ID, plant->plant_id);
+            (int)now, adc_raw, plant->release_duration_ms, device_id, client_id, plant->plant_id);
         
-        mqtt_app_publish(CONFIG_MQTT_PUBLISH_TOPIC, payload);
+        mqtt_app_publish(mqtt_topic, payload);
     } else {
         ESP_LOGI(TAG, "Plant %s is WET.", plant->plant_id);
     }

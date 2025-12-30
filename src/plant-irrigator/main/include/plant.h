@@ -20,4 +20,5 @@ void plant_system_init(adc_oneshot_unit_handle_t *adc_handle);
 void plant_gpio_init(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_handle);
 
 // Process a single plant (read sensor, check threshold, water if needed)
-void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_handle);
+void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_handle, const char* mqtt_topic, const char* device_id, const char* client_id);
+
