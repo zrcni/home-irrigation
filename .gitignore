@@ -2,3 +2,6 @@
 .vscode/arduino.json
 .vscode/c_cpp_properties.json
 
+.secret
+sdkconfig*
+src/plant-irrigator/build
