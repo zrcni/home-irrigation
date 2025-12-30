@@ -1,9 +1,0 @@
-{
-  "C_Cpp.intelliSenseEngine": "default",
-  "idf.espIdfPath": "/home/smappa/esp/v5.5.1/esp-idf",
-  "idf.toolsPath": "/home/smappa/.espressif",
-  "idf.pythonInstallPath": "/usr/bin/python",
-  "idf.port": "/dev/ttyUSB0",
-  "idf.monitorPort": "/dev/ttyUSB0",
-  "idf.flashType": "UART"
-}
