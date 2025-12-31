@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
@@ -14,6 +18,10 @@
 
 static const char *TAG = "mqtt_app";
 static esp_mqtt_client_handle_t client = NULL;
+static EventGroupHandle_t s_mqtt_event_group;
+
+#define MQTT_CONNECTED_BIT BIT0
+#define MQTT_FAIL_BIT      BIT1
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -30,12 +38,14 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+        xEventGroupSetBits(s_mqtt_event_group, MQTT_CONNECTED_BIT);
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
+        xEventGroupSetBits(s_mqtt_event_group, MQTT_FAIL_BIT);
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
             log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
             log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
@@ -49,8 +59,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-void mqtt_app_start(const mqtt_config_t *config)
+bool mqtt_app_start(const mqtt_config_t *config)
 {
+    s_mqtt_event_group = xEventGroupCreate();
     char uri[128];
     snprintf(uri, sizeof(uri), "mqtt://%s:%d", config->broker_ip, config->port);
 
@@ -62,6 +73,20 @@ void mqtt_app_start(const mqtt_config_t *config)
     client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
+
+    EventBits_t bits = xEventGroupWaitBits(s_mqtt_event_group,
+            MQTT_CONNECTED_BIT | MQTT_FAIL_BIT,
+            pdFALSE,
+            pdFALSE,
+            pdMS_TO_TICKS(10000)); // Wait 10 seconds max
+
+    if (bits & MQTT_CONNECTED_BIT) {
+        ESP_LOGI(TAG, "MQTT Connected");
+        return true;
+    } else {
+        ESP_LOGE(TAG, "MQTT Connection Failed or Timeout");
+        return false;
+    }
 }
 
 void mqtt_app_publish(const char *topic, const char *data)

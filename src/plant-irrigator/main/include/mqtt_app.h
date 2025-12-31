@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 typedef struct {
     char broker_ip[64];
     int port;
@@ -8,6 +10,6 @@ typedef struct {
     char device_id[64];
 } mqtt_config_t;
 
-void mqtt_app_start(const mqtt_config_t *config);
+bool mqtt_app_start(const mqtt_config_t *config);
 void mqtt_app_publish(const char *topic, const char *data);
 

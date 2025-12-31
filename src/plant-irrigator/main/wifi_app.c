@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -26,6 +27,8 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        wifi_event_sta_disconnected_t* event = (wifi_event_sta_disconnected_t*) event_data;
+        ESP_LOGE(TAG, "Connect to the AP fail, reason: %d", event->reason);
         if (s_retry_num < 10) {
             esp_wifi_connect();
             s_retry_num++;
@@ -33,7 +36,6 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         } else {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
-        ESP_LOGI(TAG,"connect to the AP fail");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
@@ -42,8 +44,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-void wifi_app_start(const char *ssid, const char *password)
+bool wifi_app_start(const char *ssid, const char *password)
 {
+    ESP_LOGI(TAG, "Attempting to connect to SSID: %s, Password: %s", ssid, password);
     s_wifi_event_group = xEventGroupCreate();
 
     ESP_ERROR_CHECK(esp_netif_init());
@@ -65,10 +68,13 @@ void wifi_app_start(const char *ssid, const char *password)
                                                         &event_handler,
                                                         NULL,
                                                         &instance_got_ip));
-
     wifi_config_t wifi_config = {
         .sta = {
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+            .pmf_cfg = {
+                .capable = true,
+                .required = false
+            },
         },
     };
     
@@ -91,9 +97,12 @@ void wifi_app_start(const char *ssid, const char *password)
 
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "connected to ap SSID:%s", ssid);
+        return true;
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:%s", ssid);
+        return false;
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
+        return false;
     }
 }
