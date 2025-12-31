@@ -46,7 +46,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 
 bool wifi_app_start(const char *ssid, const char *password)
 {
-    ESP_LOGI(TAG, "Attempting to connect to SSID: %s, Password: %s", ssid, password);
+    ESP_LOGI(TAG, "Attempting to connect to SSID: %s", ssid);
     s_wifi_event_group = xEventGroupCreate();
 
     ESP_ERROR_CHECK(esp_netif_init());
