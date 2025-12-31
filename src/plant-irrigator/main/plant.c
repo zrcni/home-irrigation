@@ -3,7 +3,6 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include <time.h>
 #include <stdio.h>
 #include "sdkconfig.h"
 
@@ -61,12 +60,10 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
 
     // 4. Publish Sensor Data
     char payload[256];
-    time_t now;
-    time(&now);
     
     snprintf(payload, sizeof(payload), 
-        "{\"timestamp\":%d,\"moisture\":%d,\"water_duration\":%d,\"device_id\":\"%s\",\"client_id\":\"%s\",\"plant_id\":\"%s\",\"plant_name\":\"%s\"}",
-        (int)now, adc_raw, 0, device_id, client_id, plant->plant_id, plant->plant_name ? plant->plant_name : "");
+        "{\"moisture\":%d,\"water_duration\":%d,\"device_id\":\"%s\",\"client_id\":\"%s\",\"plant_id\":\"%s\",\"plant_name\":\"%s\"}",
+        adc_raw, 0, device_id, client_id, plant->plant_id, plant->plant_name ? plant->plant_name : "");
     
     mqtt_app_publish(mqtt_topic, payload);
 
@@ -83,8 +80,8 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
 
         // Publish Irrigation Event
         snprintf(payload, sizeof(payload), 
-            "{\"timestamp\":%d,\"moisture\":%d,\"water_duration\":%d,\"device_id\":\"%s\",\"client_id\":\"%s\",\"plant_id\":\"%s\",\"plant_name\":\"%s\"}",
-            (int)now, adc_raw, plant->release_duration_ms, device_id, client_id, plant->plant_id, plant->plant_name ? plant->plant_name : "");
+            "{\"moisture\":%d,\"water_duration\":%d,\"device_id\":\"%s\",\"client_id\":\"%s\",\"plant_id\":\"%s\",\"plant_name\":\"%s\"}",
+            adc_raw, plant->release_duration_ms, device_id, client_id, plant->plant_id, plant->plant_name ? plant->plant_name : "");
         
         mqtt_app_publish(mqtt_topic, payload);
     } else {
