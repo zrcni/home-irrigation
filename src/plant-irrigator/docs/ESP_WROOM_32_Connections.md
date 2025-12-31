@@ -2,6 +2,28 @@
 
 This document outlines the current GPIO connections used in the Plant Irrigator firmware for the standard **ESP-WROOM-32** development board.
 
+## Power Requirements
+
+*   **Power Source**: The entire system (ESP32, Relay Module, and Valves) is powered by a single **5V 2A USB Charger**.
+*   **Current Capacity**: It is critical to use a power supply capable of delivering at least **2 Amps**.
+    *   **Reason**: The ESP32 itself consumes power, but the solenoid valves and the relay coils draw significant current when active. A standard 500mA or 1A USB port/charger is **insufficient** and may cause the ESP32 to brownout or reset when a valve opens.
+*   **Sensor Power**: Soil moisture sensors are powered directly from the ESP32's GPIO pins (configured as outputs) to enable intermittent powering and prevent sensor corrosion.
+
+### Estimated Current Draw
+To understand why a 2A power supply is necessary, consider the following estimates:
+
+*   **ESP32 (WiFi Active)**: ~150mA - 250mA
+*   **Relay Module (per channel)**: ~70mA - 90mA
+*   **Solenoid Valve (5V)**: ~300mA - 500mA (per valve)
+
+**Scenario: Watering one plant**
+*   Total: ~150mA (ESP) + 80mA (Relay) + 500mA (Valve) ≈ **730mA**
+
+**Scenario: Watering three plants simultaneously**
+*   Total: ~150mA (ESP) + 240mA (Relays) + 1500mA (Valves) ≈ **1.9A**
+
+*Note: These are estimates. Actual current depends on the specific valve and relay models used.*
+
 ## Plant Connections
 
 | Component | Function | ESP32 Pin | ADC Channel | Notes |
