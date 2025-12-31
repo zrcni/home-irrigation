@@ -23,6 +23,19 @@ static const char *TAG = "main";
 
 static app_config_t app_config;
 
+void blink_init_task(void *pvParameter)
+{
+    gpio_reset_pin(BLINK_GPIO);
+    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+    
+    while (1) {
+        gpio_set_level(BLINK_GPIO, 0); // LED ON (Active Low)
+        vTaskDelay(pdMS_TO_TICKS(100));
+        gpio_set_level(BLINK_GPIO, 1); // LED OFF
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
 void blink_error_code(int blinks, int delay_ms)
 {
     gpio_reset_pin(BLINK_GPIO);
@@ -83,6 +96,10 @@ static esp_err_t init_spiffs(void)
 
 void app_main(void)
 {
+    // Start Initialization Blink
+    TaskHandle_t blink_task_handle = NULL;
+    xTaskCreate(blink_init_task, "blink_init", 2048, NULL, 5, &blink_task_handle);
+
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -107,11 +124,13 @@ void app_main(void)
 
     // Start Services
     if (!wifi_app_start(app_config.wifi.ssid, app_config.wifi.password)) {
+        if (blink_task_handle != NULL) vTaskDelete(blink_task_handle);
         ESP_LOGE(TAG, "WiFi Connection Failed. Halting.");
         blink_error_code(1, 1000); // Slow blink (1 blink per cycle, long delay)
     }
 
     if (!mqtt_app_start(&app_config.mqtt)) {
+        if (blink_task_handle != NULL) vTaskDelete(blink_task_handle);
         ESP_LOGE(TAG, "MQTT Connection Failed. Halting.");
         blink_error_code(2, 200); // Fast double blink
     }
@@ -127,6 +146,12 @@ void app_main(void)
     }
 
     ESP_LOGI(TAG, "System initialized. Starting loop...");
+
+    // Stop Initialization Blink
+    if (blink_task_handle != NULL) {
+        vTaskDelete(blink_task_handle);
+        gpio_set_level(BLINK_GPIO, 1); // Ensure LED is OFF
+    }
 
     // Publish Initialization Message
     char payload[256];
