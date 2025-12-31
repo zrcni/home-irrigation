@@ -84,6 +84,10 @@ bool wifi_app_start(const char *ssid, const char *password)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
+    
+    // Lower TX power to 8.5dBm (34 * 0.25dBm) to reduce power consumption and prevent brownouts
+    // (WiFi could not connect without this)
+    ESP_ERROR_CHECK(esp_wifi_set_max_tx_power(34));
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
 
