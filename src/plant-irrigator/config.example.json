@@ -34,7 +34,7 @@
             "name": "Plant 3 (Muratti)",
             "sensor_power_pin": 3,
             "sensor_adc_channel": 4,
-            "valve_pin": 21,
+            "valve_pin": 20,
             "dry_threshold": 2500,
             "release_duration_ms": 2500
         }
