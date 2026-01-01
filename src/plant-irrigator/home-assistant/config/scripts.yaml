@@ -27,7 +27,7 @@ sequential_plant_watering:
     
     - condition: state
       entity_id: lock.sequential_watering
-      state: "unlocked"
+      state: "locked"
       
     - service: lock.lock
       target:
