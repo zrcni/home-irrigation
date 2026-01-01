@@ -68,7 +68,9 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
     mqtt_app_publish(mqtt_topic, payload);
 
     // 5. Check Threshold
-    if (adc_raw > plant->moisture_dry_threshold) {
+    if (adc_raw == 0 || adc_raw > 3800) {
+        ESP_LOGW(TAG, "Plant %s: Sensor reading is %d (Invalid). Skipping check.", plant->plant_id, adc_raw);
+    } else if (adc_raw > plant->moisture_dry_threshold) {
         ESP_LOGI(TAG, "Plant %s is DRY. Watering...", plant->plant_id);
         
         // Open Valve
