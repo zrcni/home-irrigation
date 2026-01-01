@@ -1,0 +1,72 @@
+title: Irrigation Control
+views:
+  - title: Dashboard
+    cards:
+      # Plant 1 Card
+      - type: entities
+        title: Plant 1 (Peikonlehti)
+        show_header_toggle: false
+        entities:
+          - type: section
+            label: Status
+          - entity: sensor.plant_1_moisture_percentage
+            name: Current Moisture
+          - entity: switch.plant_1_solenoid_valve
+            name: Valve
+          - type: section
+            label: Configuration
+          - entity: input_number.plant_1_min_moisture
+            name: Min Moisture %
+          - entity: input_number.plant_1_water_duration
+            name: Water Duration (s)
+
+      # Plant 2 Card
+      - type: entities
+        title: Plant 2 (Muratti)
+        show_header_toggle: false
+        entities:
+          - type: section
+            label: Status
+          - entity: sensor.plant_2_moisture_percentage
+            name: Current Moisture
+          - entity: switch.plant_2_solenoid_valve
+            name: Valve
+          - type: section
+            label: Configuration
+          - entity: input_number.plant_2_min_moisture
+            name: Min Moisture %
+          - entity: input_number.plant_2_water_duration
+            name: Water Duration (s)
+
+      # Plant 3 Card
+      - type: entities
+        title: Plant 3 (Viirivehka)
+        show_header_toggle: false
+        entities:
+          - type: section
+            label: Status
+          - entity: sensor.plant_3_moisture_percentage
+            name: Current Moisture
+          - entity: switch.plant_3_solenoid_valve
+            name: Valve
+          - type: section
+            label: Configuration
+          - entity: input_number.plant_3_min_moisture
+            name: Min Moisture %
+          - entity: input_number.plant_3_water_duration
+            name: Water Duration (s)
+
+      # System Status Card
+      - type: entities
+        title: System Control
+        show_header_toggle: false
+        entities:
+          - entity: automation.trigger_sequential_watering_script
+            name: Auto-Watering Enabled
+          - entity: lock.sequential_watering
+            name: System Lock Status
+          - type: call-service
+            name: Run Watering Cycle Now
+            icon: mdi:water-pump
+            action_name: RUN
+            service: script.sequential_plant_watering
