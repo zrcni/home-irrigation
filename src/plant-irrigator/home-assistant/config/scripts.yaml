@@ -1,0 +1,100 @@
+sequential_plant_watering:
+  alias: Sequential Plant Watering
+  mode: single
+  sequence:
+    # 1. Acquire the lock (fail if unavailable)
+    - service: lock.lock
+      data:
+        entity_id: lock.sequential_watering
+      # If the lock is already locked, the script stops here (if we could catch error, but lock.lock waits or fails? 
+      # Actually lock.lock service just locks it. If it's already locked, it might do nothing or wait.
+      # The conversation said: "If the lock is already acquired... the script stops or waits."
+      # In HA, calling lock.lock on an already locked entity usually just succeeds immediately or does nothing.
+      # To strictly enforce "one at a time" via lock, we usually check if it's locked first OR rely on the script mode: single.
+      # But the script mode: single only prevents THIS script from running again.
+      # If we want to prevent concurrent watering, the lock is the semaphore.
+      # However, if the lock is just a state, we need to check it.
+      # But let's follow the conversation's logic which assumes acquiring the lock is the gate.
+      # Actually, if the lock is held, we probably want to abort.
+      # But standard lock.lock doesn't abort if locked.
+      # A better pattern is:
+      # - condition: state
+      #   entity_id: lock.sequential_watering
+      #   state: "unlocked"
+      # - service: lock.lock
+      # ...
+      # But I will stick close to the provided example, adding the condition check for safety.
+    
+    - condition: state
+      entity_id: lock.sequential_watering
+      state: "unlocked"
+      
+    - service: lock.lock
+      target:
+        entity_id: lock.sequential_watering
+
+    # --- Plant 1 Logic ---
+    - if:
+        # Check if Plant 1 needs water
+        - condition: numeric_state
+          entity_id: sensor.plant_1_moisture_percentage 
+          below: input_number.plant_1_min_moisture
+      then:
+        - service: notify.persistent_notification
+          data:
+            message: "Starting watering for Plant 1."
+        # Send the command to the ESPHome device
+        - service: switch.turn_on
+          target:
+            entity_id: switch.plant_1_solenoid_valve
+        # Wait for the desired duration
+        - delay: 
+            seconds: "{{ states('input_number.plant_1_water_duration') | int }}"
+        - service: switch.turn_off
+          target:
+            entity_id: switch.plant_1_solenoid_valve
+        # Small wait time before the next plant
+        - delay: "00:00:05" 
+
+    # --- Plant 2 Logic ---
+    - if:
+        - condition: numeric_state
+          entity_id: sensor.plant_2_moisture_percentage
+          below: input_number.plant_2_min_moisture
+      then:
+        - service: notify.persistent_notification
+          data:
+            message: "Starting watering for Plant 2."
+        - service: switch.turn_on
+          target:
+            entity_id: switch.plant_2_solenoid_valve
+        - delay: 
+            seconds: "{{ states('input_number.plant_2_water_duration') | int }}"
+        - service: switch.turn_off
+          target:
+            entity_id: switch.plant_2_solenoid_valve
+        - delay: "00:00:05"
+
+    # --- Plant 3 Logic ---
+    - if:
+        - condition: numeric_state
+          entity_id: sensor.plant_3_moisture_percentage
+          below: input_number.plant_3_min_moisture
+      then:
+        - service: notify.persistent_notification
+          data:
+            message: "Starting watering for Plant 3."
+        - service: switch.turn_on
+          target:
+            entity_id: switch.plant_3_solenoid_valve
+        - delay: 
+            seconds: "{{ states('input_number.plant_3_water_duration') | int }}"
+        - service: switch.turn_off
+          target:
+            entity_id: switch.plant_3_solenoid_valve
+        - delay: "00:00:05"
+
+    # 2. Release the lock at the very end
+    - service: lock.unlock
+      target:
+        entity_id: lock.sequential_watering

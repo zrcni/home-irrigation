@@ -1,0 +1,29 @@
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    # network_mode: host is recommended for Home Assistant to enable discovery
+    # and is required for the Raspberry Pi setup.
+    network_mode: host
+    # If running on a system where host networking is not supported (e.g. Mac/Windows),
+    # uncomment the ports section and remove network_mode: host
+    # ports:
+    #   - 8123:8123
+
+  esphome:
+    container_name: esphome
+    image: ghcr.io/esphome/esphome
+    volumes:
+      - ./esphome:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    network_mode: host
+    # ports:
+    #   - 6052:6052
+    environment:
+      - USERNAME=admin
+      - PASSWORD=admin

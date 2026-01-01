@@ -1,0 +1,92 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Input Numbers for thresholds and durations
+input_number:
+  plant_1_min_moisture:
+    name: Plant 1 Min Moisture
+    min: 0
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    icon: mdi:water-percent
+    initial: 30
+
+  plant_1_water_duration:
+    name: Plant 1 Water Duration
+    min: 1
+    max: 10
+    step: 1
+    unit_of_measurement: "s"
+    icon: mdi:timer-outline
+    initial: 3
+
+  plant_2_min_moisture:
+    name: Plant 2 Min Moisture
+    min: 0
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    icon: mdi:water-percent
+    initial: 25
+  
+  plant_2_water_duration:
+    name: Plant 2 Water Duration
+    min: 1
+    max: 10
+    step: 1
+    unit_of_measurement: "s"
+    icon: mdi:timer-outline
+    initial: 3
+
+  plant_3_min_moisture:
+    name: Plant 3 Min Moisture
+    min: 0
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    icon: mdi:water-percent
+    initial: 25
+  
+  plant_3_water_duration:
+    name: Plant 3 Water Duration
+    min: 1
+    max: 10
+    step: 1
+    unit_of_measurement: "s"
+    icon: mdi:timer-outline
+    initial: 3
+
+# Backing boolean for the lock (simulating the Helper)
+input_boolean:
+  irrigation_lock_state:
+    name: Irrigation Lock State
+    initial: off
+
+# Template Lock to provide lock.sequential_watering
+lock:
+  - platform: template
+    name: Sequential Watering
+    unique_id: sequential_watering
+    value_template: "{{ is_state('input_boolean.irrigation_lock_state', 'on') }}"
+    lock:
+      service: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.irrigation_lock_state
+    unlock:
+      service: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.irrigation_lock_state

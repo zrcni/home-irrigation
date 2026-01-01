@@ -1,0 +1,32 @@
+- alias: Trigger Sequential Watering Script
+  trigger:
+    # 1. Run every hour
+    - platform: time_pattern
+      hours: "/1"
+    # 2. ALSO run whenever ANY plant's moisture updates AND is low
+    - platform: numeric_state
+      entity_id: sensor.plant_1_moisture_percentage
+      below: input_number.plant_1_min_moisture
+    - platform: numeric_state
+      entity_id: sensor.plant_2_moisture_percentage
+      below: input_number.plant_2_min_moisture
+    - platform: numeric_state
+      entity_id: sensor.plant_3_moisture_percentage
+      below: input_number.plant_3_min_moisture
+      
+  condition:
+    # This condition ensures the script only runs if AT LEAST ONE plant is dry
+    - condition: or
+      conditions:
+        - condition: numeric_state
+          entity_id: sensor.plant_1_moisture_percentage
+          below: input_number.plant_1_min_moisture
+        - condition: numeric_state
+          entity_id: sensor.plant_2_moisture_percentage
+          below: input_number.plant_2_min_moisture
+        - condition: numeric_state
+          entity_id: sensor.plant_3_moisture_percentage
+          below: input_number.plant_3_min_moisture
+
+  action:
+    - service: script.sequential_plant_watering

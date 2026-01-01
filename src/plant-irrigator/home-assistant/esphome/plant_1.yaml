@@ -1,0 +1,66 @@
+esphome:
+  name: plant_1_irrigation
+  platform: ESP32
+  board: esp32c3dev
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  reboot_timeout: 0s
+  power_save_mode: light
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Plant-1-Irrigation Fallback Hotspot"
+    password: "password"
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  password: !secret ota_password
+
+logger:
+  level: WARNING
+
+# ADC Setup for Moisture Sensor
+adc:
+
+sensor:
+  - platform: adc
+    pin: GPIO0
+    id: moisture_raw
+    name: "Plant 1 Moisture Raw"
+    attenuation: auto
+    update_interval: never
+    filters:
+      - calibrate_linear:
+          - 0.0 -> 100.0 # Adjust based on calibration (Wet)
+          - 3.0 -> 0.0   # Adjust based on calibration (Dry)
+      - lambda: return x; # Placeholder for further processing if needed
+    on_value:
+      then:
+        - sensor.template.publish:
+            id: moisture_percentage
+            state: !lambda 'return x;'
+
+  - platform: template
+    name: "Plant 1 Moisture Percentage"
+    id: moisture_percentage
+    unit_of_measurement: "%"
+
+switch:
+  - platform: gpio
+    pin: GPIO1
+    id: solenoid_valve
+    name: "Plant 1 Solenoid Valve"
+    restore_mode: ALWAYS_OFF
+
+deep_sleep:
+  run_duration: 10s # Give it enough time to connect and report
+  sleep_duration: 30min
+  id: deep_sleep_component
+  on_sleep:
+    then:
+      - switch.turn_off: solenoid_valve
