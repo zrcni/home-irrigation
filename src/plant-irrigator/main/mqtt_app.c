@@ -19,13 +19,23 @@
 static const char *TAG = "mqtt_app";
 static esp_mqtt_client_handle_t client = NULL;
 static EventGroupHandle_t s_mqtt_event_group;
+static char s_debug_topic[64] = {0};
 
 #define MQTT_CONNECTED_BIT BIT0
-#define MQTT_FAIL_BIT      BIT1
+#define MQTT_FAIL_BIT BIT1
+
+void mqtt_app_publish_debug(const char *message)
+{
+    if (client != NULL && s_debug_topic[0] != '\0')
+    {
+        esp_mqtt_client_publish(client, s_debug_topic, message, 0, 1, 0);
+    }
+}
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
-    if (error_code != 0) {
+    if (error_code != 0)
+    {
         ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
 }
@@ -34,11 +44,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32 "", base, event_id);
     esp_mqtt_event_handle_t event = event_data;
-    
-    switch ((esp_mqtt_event_id_t)event_id) {
+
+    switch ((esp_mqtt_event_id_t)event_id)
+    {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         xEventGroupSetBits(s_mqtt_event_group, MQTT_CONNECTED_BIT);
+        mqtt_app_publish_debug("MQTT Connected");
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
@@ -46,10 +58,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
         xEventGroupSetBits(s_mqtt_event_group, MQTT_FAIL_BIT);
-        if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
+        mqtt_app_publish_debug("MQTT Error");
+        if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT)
+        {
             log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
             log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
-            log_error_if_nonzero("captured as transport's socket errno",  event->error_handle->esp_transport_sock_errno);
+            log_error_if_nonzero("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
             ESP_LOGI(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
         }
         break;
@@ -61,6 +75,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 bool mqtt_app_start(const mqtt_config_t *config)
 {
+    if (config->debug_topic[0] != '\0')
+    {
+        strlcpy(s_debug_topic, config->debug_topic, sizeof(s_debug_topic));
+    }
+
     s_mqtt_event_group = xEventGroupCreate();
     char uri[128];
     snprintf(uri, sizeof(uri), "mqtt://%s:%d", config->broker_ip, config->port);
@@ -75,15 +94,18 @@ bool mqtt_app_start(const mqtt_config_t *config)
     esp_mqtt_client_start(client);
 
     EventBits_t bits = xEventGroupWaitBits(s_mqtt_event_group,
-            MQTT_CONNECTED_BIT | MQTT_FAIL_BIT,
-            pdFALSE,
-            pdFALSE,
-            pdMS_TO_TICKS(10000)); // Wait 10 seconds max
+                                           MQTT_CONNECTED_BIT | MQTT_FAIL_BIT,
+                                           pdFALSE,
+                                           pdFALSE,
+                                           pdMS_TO_TICKS(10000)); // Wait 10 seconds max
 
-    if (bits & MQTT_CONNECTED_BIT) {
+    if (bits & MQTT_CONNECTED_BIT)
+    {
         ESP_LOGI(TAG, "MQTT Connected");
         return true;
-    } else {
+    }
+    else
+    {
         ESP_LOGE(TAG, "MQTT Connection Failed or Timeout");
         return false;
     }
@@ -91,10 +113,13 @@ bool mqtt_app_start(const mqtt_config_t *config)
 
 void mqtt_app_publish(const char *topic, const char *data)
 {
-    if (client != NULL) {
+    if (client != NULL)
+    {
         int msg_id = esp_mqtt_client_publish(client, topic, data, 0, 1, 0);
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-    } else {
+    }
+    else
+    {
         ESP_LOGE(TAG, "MQTT client not initialized");
     }
 }

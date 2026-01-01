@@ -7,6 +7,7 @@
         "broker_ip": "192.168.1.100",
         "port": 1883,
         "topic": "sensors/plant_irrigator",
+        "debug_topic": "sensors/plant_irrigator/debug",
         "client_id": "esp32_client",
         "device_id": "plant_irrigator_01"
     },

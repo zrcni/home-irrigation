@@ -146,6 +146,7 @@ void app_main(void)
     }
 
     ESP_LOGI(TAG, "System initialized. Starting loop...");
+    mqtt_app_publish_debug("System Initialized");
 
     // Stop Initialization Blink
     if (blink_task_handle != NULL) {
