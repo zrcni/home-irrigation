@@ -1,6 +1,7 @@
 todo populate readme
 
-Capacitive Soil Moisture Sensor v2.0
+Capacitive Soil Moisture Sensor v2.0 (black)
+
 air 2900
 water 1600
 soil ?
