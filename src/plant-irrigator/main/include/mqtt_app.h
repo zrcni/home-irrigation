@@ -14,4 +14,5 @@ typedef struct {
 bool mqtt_app_start(const mqtt_config_t *config);
 void mqtt_app_publish(const char *topic, const char *data);
 void mqtt_app_publish_debug(const char *message);
+bool mqtt_app_wait_all_published(int timeout_ms);
 

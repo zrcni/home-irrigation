@@ -6,6 +6,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
@@ -19,6 +20,8 @@
 static const char *TAG = "mqtt_app";
 static esp_mqtt_client_handle_t client = NULL;
 static EventGroupHandle_t s_mqtt_event_group;
+static SemaphoreHandle_t s_publish_mutex = NULL;
+static int s_pending_publish_count = 0;
 static char s_debug_topic[64] = {0};
 
 #define MQTT_CONNECTED_BIT BIT0
@@ -28,7 +31,19 @@ void mqtt_app_publish_debug(const char *message)
 {
     if (client != NULL && s_debug_topic[0] != '\0')
     {
-        esp_mqtt_client_publish(client, s_debug_topic, message, 0, 1, 0);
+        if (s_publish_mutex != NULL) {
+            xSemaphoreTake(s_publish_mutex, portMAX_DELAY);
+            s_pending_publish_count++;
+            xSemaphoreGive(s_publish_mutex);
+        }
+        int msg_id = esp_mqtt_client_publish(client, s_debug_topic, message, 0, 1, 0);
+        if (msg_id == -1) {
+             if (s_publish_mutex != NULL) {
+                xSemaphoreTake(s_publish_mutex, portMAX_DELAY);
+                if (s_pending_publish_count > 0) s_pending_publish_count--;
+                xSemaphoreGive(s_publish_mutex);
+            }
+        }
     }
 }
 
@@ -54,6 +69,16 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+        break;
+    case MQTT_EVENT_PUBLISHED:
+        ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        if (s_publish_mutex != NULL) {
+            xSemaphoreTake(s_publish_mutex, portMAX_DELAY);
+            if (s_pending_publish_count > 0) {
+                s_pending_publish_count--;
+            }
+            xSemaphoreGive(s_publish_mutex);
+        }
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -81,6 +106,7 @@ bool mqtt_app_start(const mqtt_config_t *config)
     }
 
     s_mqtt_event_group = xEventGroupCreate();
+    s_publish_mutex = xSemaphoreCreateMutex();
     char uri[128];
     snprintf(uri, sizeof(uri), "mqtt://%s:%d", config->broker_ip, config->port);
 
@@ -115,11 +141,49 @@ void mqtt_app_publish(const char *topic, const char *data)
 {
     if (client != NULL)
     {
+        if (s_publish_mutex != NULL) {
+            xSemaphoreTake(s_publish_mutex, portMAX_DELAY);
+            s_pending_publish_count++;
+            xSemaphoreGive(s_publish_mutex);
+        }
+
         int msg_id = esp_mqtt_client_publish(client, topic, data, 0, 1, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        
+        if (msg_id == -1) {
+             ESP_LOGE(TAG, "Failed to publish message");
+             if (s_publish_mutex != NULL) {
+                xSemaphoreTake(s_publish_mutex, portMAX_DELAY);
+                if (s_pending_publish_count > 0) s_pending_publish_count--;
+                xSemaphoreGive(s_publish_mutex);
+            }
+        } else {
+            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        }
     }
     else
     {
         ESP_LOGE(TAG, "MQTT client not initialized");
     }
+}
+
+bool mqtt_app_wait_all_published(int timeout_ms)
+{
+    int elapsed = 0;
+    const int interval = 100;
+    while (elapsed < timeout_ms) {
+        int count = 0;
+        if (s_publish_mutex != NULL) {
+            xSemaphoreTake(s_publish_mutex, portMAX_DELAY);
+            count = s_pending_publish_count;
+            xSemaphoreGive(s_publish_mutex);
+        }
+
+        if (count == 0) {
+            return true;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(interval));
+        elapsed += interval;
+    }
+    return false;
 }

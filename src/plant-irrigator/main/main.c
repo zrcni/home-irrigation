@@ -168,8 +168,14 @@ void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(1000)); // Small delay between plants
     }
 
+    mqtt_app_publish_debug("Processing done. Entering deep sleep...");
+
     ESP_LOGI(TAG, "Waiting for MQTT messages to be sent...");
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    if (mqtt_app_wait_all_published(10000)) {
+        ESP_LOGI(TAG, "All MQTT messages published.");
+    } else {
+        ESP_LOGW(TAG, "Timeout waiting for MQTT messages to be published.");
+    }
 
     ESP_LOGI(TAG, "Entering deep sleep for %d ms", CHECK_INTERVAL_MS);
     esp_sleep_enable_timer_wakeup(CHECK_INTERVAL_MS * 1000ULL);
