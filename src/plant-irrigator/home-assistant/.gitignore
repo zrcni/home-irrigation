@@ -5,4 +5,5 @@ config/deps
 config/tts
 config/*.db*
 config/*.log*
+esphome/secrets.yaml
 esphome/.esphome
