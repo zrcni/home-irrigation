@@ -78,6 +78,7 @@ input_number:
 input_boolean:
   irrigation_lock_state:
     name: Irrigation Lock State
+    # NOTE: "off" simply means that plants are not currently being watered. This value changes dynamically at runtime.
     initial: off
 
 # Template Lock to provide lock.sequential_watering
