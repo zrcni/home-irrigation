@@ -65,6 +65,8 @@ views:
             name: Auto-Watering Enabled
           - entity: lock.sequential_watering
             name: System Lock Status
+          - entity: switch.prevent_deep_sleep
+            name: Prevent Deep Sleep (For Updates)
           - entity: button.update_moisture_readings
             name: Force Update Sensors
           - type: call-service

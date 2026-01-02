@@ -1,11 +1,28 @@
 esphome:
   name: irrigation-controller
   friendly_name: Irrigation Controller
+  on_boot:
+    priority: 600
+    then:
+      # Check if we should stay awake for OTA updates
+      - if:
+          condition:
+            switch.is_on: prevent_deep_sleep
+          then:
+            - deep_sleep.prevent: deep_sleep_1
+      # Otherwise, take a reading immediately on boot
+      - script.execute: read_sensors
 
 esp32:
   board: esp32-c3-devkitm-1
   framework:
     type: esp-idf
+
+# Deep Sleep Configuration
+deep_sleep:
+  id: deep_sleep_1
+  run_duration: 60s
+  sleep_duration: 14min # Sleep for 14 mins, run for 1 min = 15 min cycle
 
 # Enable logging
 logger:
@@ -42,12 +59,22 @@ status_led:
 
 # --- Switches for Valves ---
 switch:
+  - platform: template
+    name: "Prevent Deep Sleep"
+    id: prevent_deep_sleep
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+
   - platform: gpio
     pin: 
       number: 6
       inverted: true # Active Low
     name: "Plant 1 Solenoid Valve"
     id: plant_1_valve
+    on_turn_on:
+      - deep_sleep.prevent: deep_sleep_1
+    on_turn_off:
+      - deep_sleep.allow: deep_sleep_1
 
   - platform: gpio
     pin: 
@@ -55,6 +82,10 @@ switch:
       inverted: true # Active Low
     name: "Plant 2 Solenoid Valve"
     id: plant_2_valve
+    on_turn_on:
+      - deep_sleep.prevent: deep_sleep_1
+    on_turn_off:
+      - deep_sleep.allow: deep_sleep_1
 
   - platform: gpio
     pin: 
@@ -62,6 +93,10 @@ switch:
       inverted: true # Active Low
     name: "Plant 3 Solenoid Valve"
     id: plant_3_valve
+    on_turn_on:
+      - deep_sleep.prevent: deep_sleep_1
+    on_turn_off:
+      - deep_sleep.allow: deep_sleep_1
 
   # Internal switches for sensor power
   - platform: gpio
@@ -102,9 +137,9 @@ sensor:
     update_interval: never # Updated by script
     attenuation: 11db
 
-# --- Interval to Update Sensors ---
-interval:
-  - interval: 30min
+# --- Script to Read Sensors ---
+script:
+  - id: read_sensors
     then:
       # Plant 1
       - switch.turn_on: plant_1_power
@@ -132,22 +167,4 @@ button:
     name: "Update Moisture Readings"
     on_press:
       then:
-        # Plant 1
-        - switch.turn_on: plant_1_power
-        - delay: 100ms
-        - component.update: plant_1_adc
-        - switch.turn_off: plant_1_power
-        - delay: 1s
-
-        # Plant 2
-        - switch.turn_on: plant_2_power
-        - delay: 100ms
-        - component.update: plant_2_adc
-        - switch.turn_off: plant_2_power
-        - delay: 1s
-
-        # Plant 3
-        - switch.turn_on: plant_3_power
-        - delay: 100ms
-        - component.update: plant_3_adc
-        - switch.turn_off: plant_3_power
+        - script.execute: read_sensors
