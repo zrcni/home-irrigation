@@ -7,6 +7,7 @@
 #include "esp_spiffs.h"
 #include "cJSON.h"
 #include "driver/gpio.h"
+#include "esp_sleep.h"
 
 #include "wifi_app.h"
 #include "mqtt_app.h"
@@ -161,15 +162,16 @@ void app_main(void)
         app_config.mqtt.device_id, app_config.mqtt.client_id);
     mqtt_app_publish(app_config.mqtt.topic, payload);
 
-    while (1)
+    for (int i = 0; i < app_config.num_plants; i++)
     {
-        for (int i = 0; i < app_config.num_plants; i++)
-        {
-            plant_process(&app_config.plants[i], adc_handle, app_config.mqtt.topic, app_config.mqtt.device_id, app_config.mqtt.client_id);
-            vTaskDelay(pdMS_TO_TICKS(1000)); // Small delay between plants
-        }
-
-        ESP_LOGI(TAG, "Sleeping for %d ms", CHECK_INTERVAL_MS);
-        vTaskDelay(pdMS_TO_TICKS(CHECK_INTERVAL_MS));
+        plant_process(&app_config.plants[i], adc_handle, app_config.mqtt.topic, app_config.mqtt.device_id, app_config.mqtt.client_id);
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Small delay between plants
     }
+
+    ESP_LOGI(TAG, "Waiting for MQTT messages to be sent...");
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    ESP_LOGI(TAG, "Entering deep sleep for %d ms", CHECK_INTERVAL_MS);
+    esp_sleep_enable_timer_wakeup(CHECK_INTERVAL_MS * 1000ULL);
+    esp_deep_sleep_start();
 }
