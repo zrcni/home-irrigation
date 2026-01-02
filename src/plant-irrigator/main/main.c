@@ -97,9 +97,6 @@ static esp_err_t init_spiffs(void)
 
 void app_main(void)
 {
-    // Disable hold on GPIO 8 if it was enabled during deep sleep
-    gpio_hold_dis(BLINK_GPIO);
-
     // Start Initialization Blink
     TaskHandle_t blink_task_handle = NULL;
     xTaskCreate(blink_init_task, "blink_init", 2048, NULL, 5, &blink_task_handle);
@@ -181,11 +178,6 @@ void app_main(void)
     }
 
     ESP_LOGI(TAG, "Entering deep sleep for %d ms", CHECK_INTERVAL_MS);
-    
-    // Ensure LED is OFF and hold it during deep sleep
-    gpio_set_level(BLINK_GPIO, 1);
-    gpio_hold_en(BLINK_GPIO);
-
     esp_sleep_enable_timer_wakeup(CHECK_INTERVAL_MS * 1000ULL);
     esp_deep_sleep_start();
 }

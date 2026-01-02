@@ -27,6 +27,10 @@ To understand why a 2A power supply is necessary, consider the following estimat
 ## Pinout Considerations
 The ESP32-C3 Super Mini has a limited number of exposed pins. The following pins are generally safe to use, avoiding strapping pins (GPIO 2, 8, 9) which can affect boot modes.
 
+## Onboard LEDs
+*   **Blue LED**: Connected to **GPIO 8** (Active Low). This is the user-controllable LED.
+*   **Red LED**: **Power LED**. Hardwired to the 3.3V rail. It stays ON whenever the board has power, including during Deep Sleep. It cannot be controlled via software.
+
 ## Plant Connections
 
 | Component | Function | ESP32-C3 Pin | ADC Channel | Notes |
