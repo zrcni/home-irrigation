@@ -68,8 +68,15 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
     mqtt_app_publish(mqtt_topic, payload);
 
     // 5. Check Threshold
-    if (adc_raw > plant->moisture_dry_threshold) {
+    char debug_msg[128];
+    if (adc_raw == 0 || adc_raw > 3800) {
+        ESP_LOGW(TAG, "Plant %s: Sensor reading is %d (Invalid). Skipping check.", plant->plant_id, adc_raw);
+        snprintf(debug_msg, sizeof(debug_msg), "Plant %s: Invalid sensor reading %d", plant->plant_id, adc_raw);
+        mqtt_app_publish_debug(debug_msg);
+    } else if (adc_raw > plant->moisture_dry_threshold) {
         ESP_LOGI(TAG, "Plant %s is DRY. Watering...", plant->plant_id);
+        snprintf(debug_msg, sizeof(debug_msg), "Plant %s: DRY (%d > %d). Watering...", plant->plant_id, adc_raw, plant->moisture_dry_threshold);
+        mqtt_app_publish_debug(debug_msg);
         
         // Open Valve
         gpio_set_level(plant->valve_gpio_pin, VALVE_OPEN_LEVEL);
@@ -77,6 +84,9 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
         vTaskDelay(pdMS_TO_TICKS(plant->release_duration_ms));
         gpio_set_level(plant->valve_gpio_pin, VALVE_CLOSED_LEVEL);
         ESP_LOGI(TAG, "Plant %s: Set valve pin %d to %d (CLOSE)", plant->plant_id, plant->valve_gpio_pin, VALVE_CLOSED_LEVEL);
+
+        snprintf(debug_msg, sizeof(debug_msg), "Plant %s: Watering Complete", plant->plant_id);
+        mqtt_app_publish_debug(debug_msg);
 
         // Publish Irrigation Event
         snprintf(payload, sizeof(payload), 
@@ -86,5 +96,7 @@ void plant_process(const plant_config_t* plant, adc_oneshot_unit_handle_t adc_ha
         mqtt_app_publish(mqtt_topic, payload);
     } else {
         ESP_LOGI(TAG, "Plant %s is WET.", plant->plant_id);
+        snprintf(debug_msg, sizeof(debug_msg), "Plant %s: WET (%d <= %d)", plant->plant_id, adc_raw, plant->moisture_dry_threshold);
+        mqtt_app_publish_debug(debug_msg);
     }
 }

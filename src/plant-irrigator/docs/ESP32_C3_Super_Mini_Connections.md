@@ -40,9 +40,9 @@ The ESP32-C3 Super Mini has a limited number of exposed pins. The following pins
 | Moisture Sensor Power | Digital Output | **GPIO 7** | - | |
 | Water Valve Relay | Digital Output | **GPIO 10** | - | |
 | **Plant 3** | | | | |
-| Moisture Sensor Data | Analog Input | **GPIO 3** | `ADC1_CH3` | |
-| Moisture Sensor Power | Digital Output | **GPIO 4** | - | |
-| Water Valve Relay | Digital Output | **GPIO 21** | - | |
+| Moisture Sensor Data | Analog Input | **GPIO 4** | `ADC1_CH4` | |
+| Moisture Sensor Power | Digital Output | **GPIO 3** | - | |
+| Water Valve Relay | Digital Output | **GPIO 20** | - | Changed from 21 (TX) to avoid boot chatter |
 
 ## Strapping Pins (Avoid if possible)
 *   **GPIO 8**: Internal Pull-up, Strapping Pin (High at boot). Connected to onboard LED.

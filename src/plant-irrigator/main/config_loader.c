@@ -71,6 +71,7 @@ bool config_load(app_config_t *config)
         cJSON *broker_ip = cJSON_GetObjectItemCaseSensitive(mqtt, "broker_ip");
         cJSON *port = cJSON_GetObjectItemCaseSensitive(mqtt, "port");
         cJSON *topic = cJSON_GetObjectItemCaseSensitive(mqtt, "topic");
+        cJSON *debug_topic = cJSON_GetObjectItemCaseSensitive(mqtt, "debug_topic");
         cJSON *client_id = cJSON_GetObjectItemCaseSensitive(mqtt, "client_id");
         cJSON *device_id = cJSON_GetObjectItemCaseSensitive(mqtt, "device_id");
 
@@ -82,6 +83,7 @@ bool config_load(app_config_t *config)
             config->mqtt.port = port->valueint;
             strlcpy(config->mqtt.topic, topic->valuestring, sizeof(config->mqtt.topic));
             
+            if (cJSON_IsString(debug_topic)) strlcpy(config->mqtt.debug_topic, debug_topic->valuestring, sizeof(config->mqtt.debug_topic));
             if (cJSON_IsString(client_id)) strlcpy(config->mqtt.client_id, client_id->valuestring, sizeof(config->mqtt.client_id));
             if (cJSON_IsString(device_id)) strlcpy(config->mqtt.device_id, device_id->valuestring, sizeof(config->mqtt.device_id));
         }
