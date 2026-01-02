@@ -19,7 +19,7 @@
             "sensor_adc_channel": 0,
             "valve_pin": 6,
             "dry_threshold": 2500,
-            "release_duration_ms": 2500
+            "release_duration_ms": 30000
         },
         {
             "id": "plant_2",
@@ -28,7 +28,7 @@
             "sensor_adc_channel": 1,
             "valve_pin": 10,
             "dry_threshold": 2500,
-            "release_duration_ms": 2500
+            "release_duration_ms": 16000
         },
         {
             "id": "plant_3",
@@ -37,7 +37,7 @@
             "sensor_adc_channel": 4,
             "valve_pin": 20,
             "dry_threshold": 2500,
-            "release_duration_ms": 2500
+            "release_duration_ms": 16000
         }
     ]
 }

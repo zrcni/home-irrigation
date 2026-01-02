@@ -73,6 +73,7 @@ You can define multiple plants in the `plants` array. Each plant object requires
 *   **valve_pin**: The GPIO pin connected to the relay/transistor controlling the water pump/valve.
 *   **dry_threshold**: The analog value (0-4095) above which the soil is considered "dry". Higher values usually mean drier soil (depending on sensor).
 *   **release_duration_ms**: How long (in milliseconds) to open the valve when watering is triggered.
+    *   *Note: In the current setup (gravity feed, 5mm hose), 20000ms (20s) delivers approximately 0.5dl of water.*
 
 ## Applying Changes
 
