@@ -10,7 +10,11 @@ This folder contains the configuration for running Home Assistant and ESPHome fo
 ## Setup
 
 1.  **Secrets**:
-    Edit `esphome/secrets.yaml` and set your Wi-Fi credentials and generate keys/passwords.
+    Copy `esphome/secrets.yaml.example` to `esphome/secrets.yaml`:
+    ```bash
+    cp esphome/secrets.yaml.example esphome/secrets.yaml
+    ```
+    Then edit `esphome/secrets.yaml` and set your Wi-Fi credentials and generate keys/passwords.
 
 2.  **Start Services**:
     Run the following command in this directory:
@@ -24,6 +28,8 @@ This folder contains the configuration for running Home Assistant and ESPHome fo
 
 4.  **Access ESPHome Dashboard**:
     Open `http://<your-ip>:6052` (or `http://localhost:6052` if local).
+    - You should see the `irrigation-controller` device.
+    - Click **Install** to flash your ESP32-C3.
 
 ## Configuration
 
@@ -32,7 +38,7 @@ This folder contains the configuration for running Home Assistant and ESPHome fo
     -   `scripts.yaml`: Contains the sequential watering logic.
     -   `automations.yaml`: Triggers the watering script.
 -   **ESPHome Config**: Located in `esphome/`.
-    -   `plant_a.yaml`: Configuration for the first plant device.
+    -   `irrigation.yaml`: Configuration for the ESP32-C3 controller.
 
 ## Notes on Networking
 

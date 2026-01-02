@@ -23,11 +23,11 @@ input_number:
   plant_1_min_moisture:
     name: Plant 1 Min Moisture
     min: 0
-    max: 100
-    step: 1
-    unit_of_measurement: "%"
+    max: 4095
+    step: 10
+    unit_of_measurement: "ADC"
     icon: mdi:water-percent
-    initial: 30
+    initial: 2500
 
   plant_1_water_duration:
     name: Plant 1 Water Duration
@@ -41,11 +41,11 @@ input_number:
   plant_2_min_moisture:
     name: Plant 2 Min Moisture
     min: 0
-    max: 100
-    step: 1
-    unit_of_measurement: "%"
+    max: 4095
+    step: 10
+    unit_of_measurement: "ADC"
     icon: mdi:water-percent
-    initial: 25
+    initial: 2500
   
   plant_2_water_duration:
     name: Plant 2 Water Duration
@@ -59,11 +59,11 @@ input_number:
   plant_3_min_moisture:
     name: Plant 3 Min Moisture
     min: 0
-    max: 100
-    step: 1
-    unit_of_measurement: "%"
+    max: 4095
+    step: 10
+    unit_of_measurement: "ADC"
     icon: mdi:water-percent
-    initial: 25
+    initial: 2500
   
   plant_3_water_duration:
     name: Plant 3 Water Duration

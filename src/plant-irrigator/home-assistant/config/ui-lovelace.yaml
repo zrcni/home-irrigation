@@ -9,50 +9,50 @@ views:
         entities:
           - type: section
             label: Status
-          - entity: sensor.plant_1_moisture_percentage
-            name: Current Moisture
+          - entity: sensor.plant_1_moisture
+            name: Current Moisture (ADC)
           - entity: switch.plant_1_solenoid_valve
             name: Valve
           - type: section
             label: Configuration
           - entity: input_number.plant_1_min_moisture
-            name: Min Moisture %
+            name: Min Moisture (ADC)
           - entity: input_number.plant_1_water_duration
             name: Water Duration (s)
 
       # Plant 2 Card
       - type: entities
-        title: Plant 2 (Muratti)
+        title: Plant 2 (Viirivehka)
         show_header_toggle: false
         entities:
           - type: section
             label: Status
-          - entity: sensor.plant_2_moisture_percentage
-            name: Current Moisture
+          - entity: sensor.plant_2_moisture
+            name: Current Moisture (ADC)
           - entity: switch.plant_2_solenoid_valve
             name: Valve
           - type: section
             label: Configuration
           - entity: input_number.plant_2_min_moisture
-            name: Min Moisture %
+            name: Min Moisture (ADC)
           - entity: input_number.plant_2_water_duration
             name: Water Duration (s)
 
       # Plant 3 Card
       - type: entities
-        title: Plant 3 (Viirivehka)
+        title: Plant 3 (Muratti)
         show_header_toggle: false
         entities:
           - type: section
             label: Status
-          - entity: sensor.plant_3_moisture_percentage
-            name: Current Moisture
+          - entity: sensor.plant_3_moisture
+            name: Current Moisture (ADC)
           - entity: switch.plant_3_solenoid_valve
             name: Valve
           - type: section
             label: Configuration
           - entity: input_number.plant_3_min_moisture
-            name: Min Moisture %
+            name: Min Moisture (ADC)
           - entity: input_number.plant_3_water_duration
             name: Water Duration (s)
 
@@ -65,6 +65,8 @@ views:
             name: Auto-Watering Enabled
           - entity: lock.sequential_watering
             name: System Lock Status
+          - entity: button.update_moisture_readings
+            name: Force Update Sensors
           - type: call-service
             name: Run Watering Cycle Now
             icon: mdi:water-pump

@@ -5,3 +5,4 @@ config/deps
 config/tts
 config/*.db*
 config/*.log*
+esphome/.esphome
