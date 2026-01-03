@@ -10,3 +10,8 @@
 - ESP-IDF v5.5.1 project.
 - Uses SPIFFS for configuration (`config.json`).
 - Custom partition table `custom_partitions.csv`.
+
+## Configuration Management
+- `config.example.json` is the template for the actual configuration file `data/config.json`.
+- When modifying the configuration structure or adding new fields to `data/config.json`, ALWAYS update `config.example.json` to reflect these changes.
+

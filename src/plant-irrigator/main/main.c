@@ -20,8 +20,6 @@ static const char *TAG = "main";
 // Use GPIO 2 for ESP-WROOM-32.
 #define BLINK_GPIO 8 
 
-#define CHECK_INTERVAL_MS 1800000 // 30 minutes
-
 static app_config_t app_config;
 
 void blink_init_task(void *pvParameter)
@@ -95,6 +93,19 @@ static esp_err_t init_spiffs(void)
     return ESP_OK;
 }
 
+void run_irrigation_cycle(adc_oneshot_unit_handle_t adc_handle)
+{
+    ESP_LOGI(TAG, "Starting irrigation cycle...");
+    
+    for (int i = 0; i < app_config.num_plants; i++)
+    {
+        plant_process(&app_config.plants[i], adc_handle, app_config.mqtt.topic, app_config.mqtt.device_id, app_config.mqtt.client_id);
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Small delay between plants
+    }
+    
+    ESP_LOGI(TAG, "Irrigation cycle completed.");
+}
+
 void app_main(void)
 {
     // Start Initialization Blink
@@ -162,22 +173,29 @@ void app_main(void)
         app_config.mqtt.device_id, app_config.mqtt.client_id);
     mqtt_app_publish(app_config.mqtt.topic, payload);
 
-    for (int i = 0; i < app_config.num_plants; i++)
-    {
-        plant_process(&app_config.plants[i], adc_handle, app_config.mqtt.topic, app_config.mqtt.device_id, app_config.mqtt.client_id);
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Small delay between plants
-    }
+    if (app_config.deep_sleep_enabled) {
+        run_irrigation_cycle(adc_handle);
 
-    mqtt_app_publish_debug("Processing done. Entering deep sleep...");
+        mqtt_app_publish_debug("Processing done. Entering deep sleep...");
 
-    ESP_LOGI(TAG, "Waiting for MQTT messages to be sent...");
-    if (mqtt_app_wait_all_published(10000)) {
-        ESP_LOGI(TAG, "All MQTT messages published.");
+        ESP_LOGI(TAG, "Waiting for MQTT messages to be sent...");
+        if (mqtt_app_wait_all_published(10000)) {
+            ESP_LOGI(TAG, "All MQTT messages published.");
+        } else {
+            ESP_LOGW(TAG, "Timeout waiting for MQTT messages to be published.");
+        }
+
+        ESP_LOGI(TAG, "Entering deep sleep for %d ms", app_config.sleep_duration_ms);
+        esp_sleep_enable_timer_wakeup(app_config.sleep_duration_ms * 1000ULL);
+        esp_deep_sleep_start();
     } else {
-        ESP_LOGW(TAG, "Timeout waiting for MQTT messages to be published.");
+        while (1) {
+            run_irrigation_cycle(adc_handle);
+            
+            mqtt_app_publish_debug("Processing done. Waiting for next cycle...");
+            
+            ESP_LOGI(TAG, "Waiting for %d ms", app_config.sleep_duration_ms);
+            vTaskDelay(pdMS_TO_TICKS(app_config.sleep_duration_ms));
+        }
     }
-
-    ESP_LOGI(TAG, "Entering deep sleep for %d ms", CHECK_INTERVAL_MS);
-    esp_sleep_enable_timer_wakeup(CHECK_INTERVAL_MS * 1000ULL);
-    esp_deep_sleep_start();
 }

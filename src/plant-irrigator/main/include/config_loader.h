@@ -14,6 +14,8 @@ typedef struct {
     mqtt_config_t mqtt;
     plant_config_t *plants;
     int num_plants;
+    bool deep_sleep_enabled;
+    int sleep_duration_ms;
 } app_config_t;
 
 /**

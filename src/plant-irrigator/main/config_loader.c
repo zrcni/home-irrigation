@@ -128,6 +128,24 @@ bool config_load(app_config_t *config)
         }
     }
 
+    // System Settings
+    if (success) {
+        cJSON *deep_sleep = cJSON_GetObjectItemCaseSensitive(json, "deep_sleep_enabled");
+        cJSON *sleep_duration = cJSON_GetObjectItemCaseSensitive(json, "sleep_duration_ms");
+
+        if (cJSON_IsBool(deep_sleep)) {
+            config->deep_sleep_enabled = cJSON_IsTrue(deep_sleep);
+        } else {
+            config->deep_sleep_enabled = true; // Default to true
+        }
+
+        if (cJSON_IsNumber(sleep_duration)) {
+            config->sleep_duration_ms = sleep_duration->valueint;
+        } else {
+            config->sleep_duration_ms = 1800000; // Default 30 mins
+        }
+    }
+
     cJSON_Delete(json);
     
     if (!success) {

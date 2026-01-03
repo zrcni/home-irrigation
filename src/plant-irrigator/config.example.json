@@ -11,6 +11,8 @@
         "client_id": "esp32_client",
         "device_id": "plant_irrigator_01"
     },
+    "deep_sleep_enabled": false,
+    "sleep_duration_ms": 1800000,
     "plants": [
         {
             "id": "plant_1",

@@ -44,3 +44,30 @@ The `config.example.json` file may use a default `dry_threshold` (e.g., 2500) th
 *   **3400+**: Allows the soil to dry out more before watering.
 
 Adjust the `dry_threshold` in your `config.json` according to the specific needs of your plants and the calibration of your sensors.
+
+## ESPHome Configuration & Calibration (2026)
+
+For the ESPHome-based firmware (`irrigation-controller.yaml`), we use a linear calibration to convert the raw voltage output of the sensor into a percentage (0-100%).
+
+### Calibration Values (Jan 3, 2026)
+These values were measured using the specific Capacitive Soil Moisture Sensors v2.0 installed in the system.
+
+*   **Dry (Air)**: `2.34 V` -> **0%**
+*   **Wet (Submerged)**: `0.96 V` -> **100%**
+
+### YAML Configuration
+The following filter configuration is used in `irrigation-controller.yaml` to map these values:
+
+```yaml
+filters:
+  - calibrate_linear:
+      - 2.34 -> 0.0   # Dry (Air)
+      - 0.96 -> 100.0 # Wet (Water)
+  # Clamp values to 0-100% range to avoid negative numbers or >100%
+  - lambda: "return max(0.0f, min(100.0f, x));"
+```
+
+### Hardware Note
+*   **Power**: Sensors are powered via GPIO pins (Active High) only during reading to prevent corrosion.
+*   **Voltage Range**: The sensors operate on 3.3V logic but output a max of ~3.0V (Air) down to ~1.0V (Water) depending on the specific unit and cable length.
+
